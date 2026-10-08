@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Golden Drive Invoice Generator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .controls {
+            width: 800px;
+            max-width: 100%;
+            margin: 0 auto 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        .control-group {
+            margin-bottom: 0;
+        }
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        .control-group input,
+        .control-group select,
+        .control-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .control-buttons {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        button {
+            background-color: #d4af37;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            flex: 1;
+            min-width: 120px;
+        }
+        button:hover {
+            background-color: #c4a030;
+        }
+        .invoice-container {
+            width: 800px;
+            max-width: 100%;
+            margin: 0 auto;
+            background: white;
+            position: relative;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            min-height: 1122px; /* A4 height at 96dpi */
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            background-color: #000;
+            padding: 15px 25px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 5px solid #d4af37;
+            border-bottom: 5px solid #d4af37;
+        }
+        .company-tagline {
+            font-size: 14px;
+            margin: 5px 0 0 0;
+            color: white;
+        }
+        .invoice-title {
+            text-align: center;
+            font-size: 24px;
+            margin: 15px 0;
+            color: #333;
+        }
+        .watermark {
+            position: absolute;
+            opacity: 0.1;
+            font-size: 70px;
+            color: #d4af37;
+            transform: rotate(-30deg);
+            z-index: 0;
+            top: 40%;
+            left: 25%;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        .invoice-info {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 25px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .bill-to {
+            width: 60%;
+            min-width: 300px;
+        }
+        .invoice-meta {
+            width: 35%;
+            min-width: 250px;
+            text-align: right;
+        }
+        .invoice-table {
+            width: 94%;
+            margin: 0 auto 15px;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        .invoice-table th {
+            background-color: #000;
+            padding: 8px;
+            border: 2px solid #000;
+            text-align: left;
+            color: white;
+        }
+        .invoice-table td {
+            padding: 8px;
+            border: 2px solid #e0e0e0;
+        }
+        .invoice-table input {
+            width: 100%;
+            border: none;
+            background: transparent;
+            font-size: 14px;
+        }
+        .totals {
+            width: 250px;
+            margin-left: auto;
+            margin-right: 30px;
+            margin-bottom: 20px;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        .totals td {
+            padding: 6px 12px;
+            border: 2px solid #e0e0e0;
+        }
+        .totals .label {
+            background-color: #f8f8f8;
+            font-weight: bold;
+        }
+        .bank-qr-container {
+            display: flex;
+            margin: 0 25px 15px;
+            flex-wrap: wrap;
+        }
+        .bank-info {
+            flex: 1;
+            min-width: 250px;
+            padding: 12px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #d4af37;
+            font-size: 14px;
+        }
+        .qr-code {
+            width: 100px;
+            height: 100px;
+            margin-left: 15px;
+            background-color: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            border: 1px dashed #ccc;
+        }
+        .terms {
+            margin: 0 25px 15px;
+            padding: 12px;
+            font-size: 12px;
+            flex-grow: 1;
+        }
+        .footer {
+            background-color: #000;
+            color: white;
+            padding: 12px 25px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            border-top: 5px solid #d4af37;
+            flex-wrap: wrap;
+            margin-top: auto;
+        }
+        .footer div {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+        .footer i {
+            margin-right: 8px;
+            color: #d4af37;
+        }
+        .logo-placeholder {
+            width: 120px;
+            height: 60px;
+            background-color: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            border: 1px dashed #ccc;
+        }
+        .highlight {
+            font-weight: bold;
+            color: #d4af37;
+        }
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+                background: none;
+            }
+            .controls {
+                display: none;
+            }
+            .invoice-container {
+                width: 100%;
+                margin: 0;
+                box-shadow: none;
+                min-height: auto;
+            }
+            .invoice-table, .totals {
+                font-size: 12px;
+            }
+            .bank-info {
+                font-size: 12px;
+                padding: 8px;
+            }
+            .qr-code {
+                width: 80px;
+                height: 80px;
+            }
+        }
+        @media (max-width: 768px) {
+            .controls {
+                grid-template-columns: 1fr;
+            }
+            .invoice-container {
+                width: 100%;
+            }
+            .invoice-info {
+                flex-direction: column;
+            }
+            .bill-to, .invoice-meta {
+                width: 100%;
+                min-width: auto;
+            }
+            .invoice-meta {
+                text-align: left;
+                margin-top: 15px;
+            }
+            .bank-qr-container {
+                flex-direction: column;
+            }
+            .qr-code {
+                margin: 15px 0 0 0;
+                align-self: flex-start;
+            }
+        }
+                /* [Previous CSS remains the same until .logo-placeholder] */
+        
+        .logo-placeholder {
+            width: 132px; /* Increased by 10% from 120px */
+            height: 66px; /* Increased by 10% from 60px */
+            background-color: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            border: 1px dashed #ccc;
+        }
+        
+        .qr-code {
+            width: 110px; /* Increased by 10% from 100px */
+            height: 110px; /* Increased by 10% from 100px */
+            margin-left: 15px;
+            background-color: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            border: 1px dashed #ccc;
+        }
+        
+        .footer {
+            background-color: #000;
+            color: white;
+            padding: 15px 25px; /* Increased padding by 10% */
+            display: flex;
+            justify-content: space-between;
+            font-size: 13.2px; /* Increased by 10% from 12px */
+            border-top: 5px solid #d4af37;
+            flex-wrap: wrap;
+            margin-top: auto;
+            min-height: 44px; /* Added minimum height */
+        }
+        
+        .footer i {
+            margin-right: 8px;
+            color: #d4af37;
+            font-size: 16.5px; /* Increased by 10% */
+        }
+        
+        /* [Rest of the CSS remains the same] */
+
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <div class="control-group">
+            <label for="logoUpload">Company Logo</label>
+            <input type="file" id="logoUpload" accept="image/*">
+        </div>
+        
+        <div class="control-group">
+            <label for="qrUpload">QR Code</label>
+            <input type="file" id="qrUpload" accept="image/*">
+        </div>
+        
+        <div class="control-group">
+            <label for="invoiceDate">Invoice Date</label>
+            <input type="date" id="invoiceDate" value="<?php echo date('Y-m-d'); ?>">
+        </div>
+        
+        <div class="control-group">
+            <label for="dueDays">Due Days</label>
+            <input type="number" id="dueDays" value="3" min="1">
+        </div>
+        
+        <div class="control-group">
+            <label for="billTo">Bill To</label>
+            <textarea id="billTo" rows="2">BIU PLANT PROJECT MANAGEMENT BAY SQUARE DATE <?php echo date('n-j-Y'); ?></textarea>
+        </div>
+        
+        <div class="control-group">
+            <label for="invoiceNumber">Invoice #</label>
+            <input type="text" id="invoiceNumber" value="GD_<?php echo str_pad(mt_rand(1, 99999), 5, '0', STR_PAD_LEFT); ?>">
+        </div>
+        
+        <div class="control-group">
+            <label for="taxRate">Tax Rate (%)</label>
+            <input type="number" id="taxRate" value="5" min="0" max="100" step="0.1">
+        </div>
+        
+        <div class="control-group">
+            <label for="bankName">Bank Name</label>
+            <input type="text" id="bankName" value="AL QEYADAH ALDAHABIAH FLEET VEHICLES MANAGEMENT LLC">
+        </div>
+        
+        <div class="control-group">
+            <label for="bankAccount">Account No</label>
+            <input type="text" id="bankAccount" value="14043984820001">
+        </div>
+        
+        <div class="control-group">
+            <label for="iban">IBAN</label>
+            <input type="text" id="iban" value="AE160030014043984820001">
+        </div>
+        
+        <div class="control-group">
+            <label for="bankDetails">Bank Details</label>
+            <input type="text" id="bankDetails" value="ADCB">
+        </div>
+        
+        <div class="control-group">
+            <label for="phone">Phone</label>
+            <input type="text" id="phone" value="+971 55 220 4142">
+        </div>
+        
+        <div class="control-group">
+            <label for="website">Website</label>
+            <input type="text" id="website" value="www.goldendrive.ae">
+        </div>
+        
+        <div class="control-group">
+            <label for="watermarkText">Watermark Text</label>
+            <input type="text" id="watermarkText" value="Golden Drive">
+        </div>
+        
+        <div class="control-buttons">
+            <button onclick="addRow()">Add Item</button>
+            <button onclick="removeRow()">Remove Item</button>
+            <button onclick="generateInvoice()">Generate Invoice</button>
+            <button onclick="printInvoice()">Print Invoice</button>
+        </div>
+    </div>
+
+    <div class="invoice-container" id="invoice">
+        <div class="watermark" id="watermark">Golden Drive</div>
+        
+        <div class="header">
+            <div class="logo-placeholder" id="logoContainer">Company Logo</div>
+            <div>
+                <p class="company-tagline">Provides Professional Driver Services</p>
+            </div>
+        </div>
+        
+        <h2 class="invoice-title">INVOICE</h2>
+        
+        <div class="invoice-info">
+            <div class="bill-to">
+                <p><strong>BILL TO:</strong> <span id="billToDisplay">BIU PLANT PROJECT MANAGEMENT BAY SQUARE DATE <?php echo date('n-j-Y'); ?></span></p>
+                <p><strong>DUBAI TERMS</strong> <span>Due on Receipt</span></p>
+                <p><strong>DUE DATE:</strong> <span id="dueDateDisplay"><?php echo date('n-j-Y', strtotime('+3 days')); ?></span></p>
+            </div>
+            <div class="invoice-meta">
+                <p><strong>INVOICE #:</strong> <span id="invoiceNumberDisplay">GD_<?php echo str_pad(mt_rand(1, 99999), 5, '0', STR_PAD_LEFT); ?></span></p>
+                <p><strong>Date:</strong> <span id="invoiceDateDisplay"><?php echo date('m/d/Y'); ?></span></p>
+            </div>
+        </div>
+        
+        <table class="invoice-table" id="itemsTable">
+            <thead>
+                <tr>
+                    <th width="5%">No</th>
+                    <th width="35%">Description</th>
+                    <th width="10%">Qty</th>
+                    <th width="15%">Rate</th>
+                    <th width="10%">Tax%</th>
+                    <th width="15%">Tax</th>
+                    <th width="15%">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td><input type="text" class="description" value="1 hour Booking"></td>
+                    <td><input type="number" class="qty" value="1" min="1"></td>
+                    <td><input type="number" class="rate" value="100.0" min="0" step="0.01"></td>
+                    <td class="tax-percent">5%</td>
+                    <td class="tax">5.00</td>
+                    <td class="amount">105.00</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <table class="totals">
+            <tr>
+                <td class="label">Sub Total</td>
+                <td id="subTotal">AED 100.00</td>
+            </tr>
+            <tr>
+                <td class="label">Tax (<span id="taxRateDisplay">5</span>%)</td>
+                <td id="totalTax">AED 5.00</td>
+            </tr>
+            <tr>
+                <td class="label highlight">Total</td>
+                <td class="highlight" id="grandTotal">AED 105.00</td>
+            </tr>
+            <tr>
+                <td class="label highlight">Balance Due</td>
+                <td class="highlight" id="balanceDue">AED 105.00</td>
+            </tr>
+        </table>
+        
+        <div class="bank-qr-container">
+            <div class="bank-info">
+                <p><strong>For Bank Transfers:</strong></p>
+                <p>The amount should be transferred to</p>
+                <p><strong id="bankNameDisplay">AL QEYADAH ALDAHABIAH FLEET VEHICLES MANAGEMENT LLC</strong></p>
+                <p><strong id="bankDetailsDisplay">ADCB</strong></p>
+                <p><strong>Ac no:</strong> <span id="bankAccountDisplay">14043984820001</span></p>
+                <p><strong>IBAN :</strong> <span id="ibanDisplay">AE160030014043984820001</span></p>
+            </div>
+            <div class="qr-code" id="qrContainer">QR Code</div>
+        </div>
+        
+        <div class="terms">
+            <p><strong>Terms and Condition</strong></p>
+            <ol>
+                <li>This is a computer-generated receipt, with No Signature required.</li>
+                <li>All payments and deposits made are non-refundable, unless/ otherwise mentioned on the receipt.</li>
+            </ol>
+        </div>
+        
+        <div class="footer">
+            <div>
+                <i class="fas fa-phone"></i>
+                <span id="phoneDisplay">+971 55 220 4142</span>
+            </div>
+            <div>
+                <i class="fas fa-globe"></i>
+                <span id="websiteDisplay">www.goldendrive.ae</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize with one row
+        let rowCount = 1;
+        
+        // Add logo upload functionality
+        document.getElementById('logoUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const logoContainer = document.getElementById('logoContainer');
+                    logoContainer.innerHTML = `<img src="${event.target.result}" style="max-width: 100%; max-height: 60px;">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Add QR code upload functionality
+        document.getElementById('qrUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const qrContainer = document.getElementById('qrContainer');
+                    qrContainer.innerHTML = `<img src="${event.target.result}" style="max-width: 100%; max-height: 100px;">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Add a new row to the invoice table
+        function addRow() {
+            rowCount++;
+            const table = document.getElementById('itemsTable').getElementsByTagName('tbody')[0];
+            const newRow = table.insertRow();
+            
+            newRow.innerHTML = `
+                <td>${rowCount}</td>
+                <td><input type="text" class="description" value="Service ${rowCount}"></td>
+                <td><input type="number" class="qty" value="1" min="1"></td>
+                <td><input type="number" class="rate" value="100.0" min="0" step="0.01"></td>
+                <td class="tax-percent">5%</td>
+                <td class="tax">5.00</td>
+                <td class="amount">105.00</td>
+            `;
+            
+            // Add event listeners to the new inputs
+            addInputListeners(newRow);
+            
+            // Recalculate totals
+            calculateTotals();
+        }
+        
+        // Remove the last row from the invoice table
+        function removeRow() {
+            const table = document.getElementById('itemsTable').getElementsByTagName('tbody')[0];
+            if (table.rows.length > 1) {
+                table.deleteRow(table.rows.length - 1);
+                rowCount--;
+                calculateTotals();
+            } else {
+                alert("You must have at least one item in the invoice.");
+            }
+        }
+        
+        // Add event listeners to input fields
+        function addInputListeners(row) {
+            const qtyInput = row.querySelector('.qty');
+            const rateInput = row.querySelector('.rate');
+            
+            qtyInput.addEventListener('input', calculateTotals);
+            rateInput.addEventListener('input', calculateTotals);
+        }
+        
+        // Calculate and update all totals
+        function calculateTotals() {
+            const taxRate = parseFloat(document.getElementById('taxRate').value);
+            document.getElementById('taxRateDisplay').textContent = taxRate;
+            
+            const rows = document.getElementById('itemsTable').getElementsByTagName('tbody')[0].rows;
+            let subTotal = 0;
+            
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const qty = parseFloat(row.querySelector('.qty').value) || 0;
+                const rate = parseFloat(row.querySelector('.rate').value) || 0;
+                const amountBeforeTax = qty * rate;
+                const taxAmount = amountBeforeTax * (taxRate / 100);
+                const totalAmount = amountBeforeTax + taxAmount;
+                
+                row.querySelector('.tax-percent').textContent = taxRate + '%';
+                row.querySelector('.tax').textContent = taxAmount.toFixed(2);
+                row.querySelector('.amount').textContent = totalAmount.toFixed(2);
+                
+                subTotal += amountBeforeTax;
+            }
+            
+            const totalTax = subTotal * (taxRate / 100);
+            const grandTotal = subTotal + totalTax;
+            
+            document.getElementById('subTotal').textContent = 'AED ' + subTotal.toFixed(2);
+            document.getElementById('totalTax').textContent = 'AED ' + totalTax.toFixed(2);
+            document.getElementById('grandTotal').textContent = 'AED ' + grandTotal.toFixed(2);
+            document.getElementById('balanceDue').textContent = 'AED ' + grandTotal.toFixed(2);
+            
+            // Update tax percent in all rows
+            const taxPercentCells = document.querySelectorAll('.tax-percent');
+            taxPercentCells.forEach(cell => {
+                cell.textContent = taxRate + '%';
+            });
+        }
+        
+        // Generate a new invoice with updated values
+        function generateInvoice() {
+            // Update invoice number with 5-digit random number
+            document.getElementById('invoiceNumberDisplay').textContent = 
+                document.getElementById('invoiceNumber').value = 
+                'GD_' + String(Math.floor(Math.random() * 90000) + 10000).padStart(5, '0');
+            
+            // Update dates
+            const invoiceDate = new Date(document.getElementById('invoiceDate').value);
+            const dueDays = parseInt(document.getElementById('dueDays').value);
+            const dueDate = new Date(invoiceDate);
+            dueDate.setDate(invoiceDate.getDate() + dueDays);
+            
+            document.getElementById('invoiceDateDisplay').textContent = 
+                (invoiceDate.getMonth() + 1).toString().padStart(2, '0') + '/' + 
+                invoiceDate.getDate().toString().padStart(2, '0') + '/' + 
+                invoiceDate.getFullYear();
+                
+            document.getElementById('dueDateDisplay').textContent = 
+                (dueDate.getMonth() + 1) + '-' + 
+                dueDate.getDate() + '-' + 
+                dueDate.getFullYear();
+            
+            // Update bill to
+            document.getElementById('billToDisplay').textContent = document.getElementById('billTo').value;
+            
+            // Update bank details
+            document.getElementById('bankNameDisplay').textContent = document.getElementById('bankName').value;
+            document.getElementById('bankDetailsDisplay').textContent = document.getElementById('bankDetails').value;
+            document.getElementById('bankAccountDisplay').textContent = document.getElementById('bankAccount').value;
+            document.getElementById('ibanDisplay').textContent = document.getElementById('iban').value;
+            
+            // Update contact info
+            document.getElementById('phoneDisplay').textContent = document.getElementById('phone').value;
+            document.getElementById('websiteDisplay').textContent = document.getElementById('website').value;
+            
+            // Update watermark
+            document.getElementById('watermark').textContent = document.getElementById('watermarkText').value;
+        }
+        
+        // Print the invoice
+        function printInvoice() {
+            window.print();
+        }
+        
+        // Initialize event listeners for the first row
+        document.addEventListener('DOMContentLoaded', function() {
+            const firstRow = document.getElementById('itemsTable').getElementsByTagName('tbody')[0].rows[0];
+            addInputListeners(firstRow);
+            
+            // Add listener to tax rate input
+            document.getElementById('taxRate').addEventListener('input', calculateTotals);
+            
+            // Add listeners to all control inputs
+            const controlInputs = ['invoiceDate', 'dueDays', 'billTo', 'invoiceNumber', 
+                                 'bankName', 'bankAccount', 'iban', 'bankDetails',
+                                 'phone', 'website', 'watermarkText'];
+            controlInputs.forEach(id => {
+                document.getElementById(id).addEventListener('input', generateInvoice);
+            });
+            
+            // Initial generation
+            generateInvoice();
+        });
+    </script>
+</body>
+</html>
